@@ -26,20 +26,21 @@ actions = [
     ),
     Action(
         name = "attack_enemy",
-        preconditions = ["enemy_nearby == True", "health > 20", "stamina > 10"],
+        preconditions = ["enemy_nearby == True", "health > 5 if is_backup == True else 10", "stamina > 10"],
         effects = [
             """
+            relaxation = 0.5 if is_backup == True else 1
             if enemy_level == "very_low":
-                health -= 10,
+                health -= 10 * relaxation,
                 enemy_level = None
             elif enemy_level == "low":
-                health -= 30
+                health -= 30 * relaxation
             elif enemy_level == "medium":
-                health -= 50
+                health -= 50 * relaxation
             elif enemy_level == "high":
-                health -= 70
+                health -= 70 * relaxation
             elif enemy_level == "very_high":
-                health -= 90
+                health -= 90 * relaxation
                 enemy_level = None
             else:
                 pass
@@ -78,7 +79,7 @@ actions = [
         preconditions = ["is_in_safe_zone == True", "is_backup == False"],
         effects = [
             "is_backup = True",
-            "stamina -= 20"
+            "stamina -= 50"
         ]
     ),
     Action(
