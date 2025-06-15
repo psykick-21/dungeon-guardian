@@ -64,13 +64,11 @@ actions = [
     Action(
         name = "retreat",
         preconditions = [
-            "lambda x: x['enemyNearby'] == True",
             "lambda x: x['isInSafeZone'] == False"
         ],
         effects = """{
-    'enemyNearby': lambda x: False,
     'isInSafeZone': lambda x: True,
-    'stamina': lambda x: x['stamina'] + 5
+    'stamina': lambda x: x['stamina'] - 5
 }"""
     ),
     Action(

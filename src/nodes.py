@@ -23,6 +23,7 @@ from .structs import (
 import time
 import os
 from .action import actions, actions_dict
+import json
 
 
 
@@ -102,17 +103,32 @@ def planner_node(state: AgentState, config: RunnableConfig) -> AgentState:
 def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentState:
     
     previous_world_state = state["current_world_state"]
-    current_world_state = state["current_world_state"].copy(deep=True)
+    current_world_state = state["current_world_state"].copy()
     action_sequence = state["action_sequence"]
 
+    preconditions_met = False
     for action in action_sequence:
+        
         action_obj = actions_dict[action]
+        
         for precondition in action_obj.preconditions:
             if not eval(precondition)(current_world_state):
                 break
         else:
-            action_obj.execute(current_world_state)
+            preconditions_met = True
 
-    
-    pass
+        if preconditions_met:
+            for key, value in eval(action_obj.effects).items():
+                current_world_state[key] = value(current_world_state)
+
+    with open("/Users/psykick/Documents/GitHub/dungeon-guardian/temp/current_world_state.json", "w") as f:
+        f.write(json.dumps(current_world_state))
+
+    with open("/Users/psykick/Documents/GitHub/dungeon-guardian/temp/previous_world_state.json", "w") as f:
+        f.write(json.dumps(previous_world_state))
+
+    return {
+        "current_world_state": current_world_state,
+        "previous_world_state": previous_world_state
+    }
     
