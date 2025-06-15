@@ -124,3 +124,7 @@ actions = [
         ]
     )
 ]
+
+
+
+actions_dict = {action.name: action for action in actions}

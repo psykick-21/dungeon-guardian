@@ -76,10 +76,11 @@ def create_agent(
     Returns:
         A configured agent that combines the language model, prompt, and optional components.
     """
-    agent = prompt | llm
-
+    
     if output_structure:
-        agent = agent.with_structured_output(output_structure)
+        llm = llm.with_structured_output(output_structure)
+    
+    agent = prompt | llm
 
     if tools:
         agent = agent.with_tools(tools)
