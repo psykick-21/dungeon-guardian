@@ -28,82 +28,66 @@ class Action:
 actions = [
     Action(
         name = "heal_self",
-        preconditions = ["potion_count > 0", "is_in_safe_zone == True"],
+        preconditions = ["potionCount > 0", "isInSafeZone == True"],
         effects = [
-            "health += 30",
-            "potion_count -= 1"
+            "health = min(100, health + 25)",
+            "potionCount -= 1"
         ]
     ),
     Action(
         name = "attack_enemy",
-        preconditions = ["enemy_nearby == True", "health > 5 if is_backup == True else 10", "stamina > 10"],
+        preconditions = ["enemyNearby == True", "health > (15 if isBackup == True else 25)", "stamina > 10"],
         effects = [
-            """relaxation = 0.5 if is_backup == True else 1
-if enemy_level == "very_low":
-    health -= 10 * relaxation,
-    enemy_level = None
-elif enemy_level == "low":
-    health -= 30 * relaxation
-elif enemy_level == "medium":
-    health -= 50 * relaxation
-elif enemy_level == "high":
-    health -= 70 * relaxation
-elif enemy_level == "very_high":
-    health -= 90 * relaxation
-    enemy_level = None
-else:
-    pass
-            """,
-            "enemy_nearby = False",
-            "enemy_level = None",
-            "stamina -= 10"
+            "if enemyLevel == 'very_low': health -= (5 if isBackup == True else 10)",
+            "if enemyLevel == 'low': health -= (10 if isBackup == True else 20)",
+            "if enemyLevel == 'medium': health -= (15 if isBackup == True else 30)",
+            "if enemyLevel == 'high': health -= (20 if isBackup == True else 40)",
+            "if enemyLevel == 'very_high': health -= (25 if isBackup == True else 50)",
+            "enemyNearby = False",
+            "enemyLevel = None",
+            "stamina -= 15"
         ]
     ),
     Action(
         name = "retreat",
-        preconditions = ["enemy_nearby == True", "is_in_safe_zone == False"],
+        preconditions = ["enemyNearby == True", "isInSafeZone == False"],
         effects = [
-            "enemy_nearby = False",
-            "is_in_safe_zone = True",
-            "stamina += 10"
+            "enemyNearby = False",
+            "isInSafeZone = True",
+            "stamina += 5"
         ]
     ),
     Action(
         name = "defend_treasure",
-        preconditions = ["treasure_threat_level != 'low'"],
+        preconditions = ["treasureThreatLevel != 'low'", "stamina > 15"],
         effects = [
-            """if treasure_threat_level == "medium":
-    treasure_threat_level = "high"
-elif treasure_threat_level == "high":
-    treasure_threat_level = "very_high"
-else:
-    pass
-            """,
-            "stamina -= 10"
+            "if treasureThreatLevel == 'high': treasureThreatLevel = 'medium'",
+            "if treasureThreatLevel == 'medium': treasureThreatLevel = 'low'",
+            "stamina -= 20"
         ]
     ),
     Action(
         name = "call_backup",
-        preconditions = ["is_in_safe_zone == True", "is_backup == False"],
+        preconditions = ["isInSafeZone == True", "isBackup == False", "stamina >= 40"],
         effects = [
-            "is_backup = True",
-            "stamina -= 50"
+            "isBackup = True",
+            "stamina -= 40"
         ]
     ),
     Action(
         name = "search_for_potion",
-        preconditions = ["is_in_safe_zone == True", "stamina > 10"],
+        preconditions = ["isInSafeZone == True", "stamina > 15", "potionCount < 2"],
         effects = [
-            "potion_count += 1",
-            "stamina -= 10",
+            "potionCount += 1",
+            "stamina -= 15",
         ]
     ),
     Action(
         name = "rest",
-        preconditions = ["is_in_safe_zone == True", "enemy_nearby == False"],
+        preconditions = ["isInSafeZone == True", "enemyNearby == False"],
         effects = [
-            "stamina += 20",
-            "health += 10"
+            "stamina = min(100, stamina + 25)",
+            "health = min(100, health + 15)"
         ]
     )
 ]
