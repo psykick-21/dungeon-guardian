@@ -110,3 +110,7 @@ Alternative: Retreat (if stamina allows)
 
 Remember: Your action sequence will be executed step-by-step. Each action must be valid given the expected world state at that point in the plan. Consider action failure rates and plan accordingly.
 """.format(actions=actions, goals=Goal._member_names_)
+
+
+if __name__ == "__main__":
+    print(PLANNER_SYSTEM_PROMPT_TEMPLATE)

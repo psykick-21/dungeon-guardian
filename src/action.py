@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import List
 from dataclasses import dataclass
 
@@ -28,66 +27,103 @@ class Action:
 actions = [
     Action(
         name = "heal_self",
-        preconditions = ["potionCount > 0", "isInSafeZone == True"],
+        preconditions = [
+            "lambda x: x['potionCount'] > 0",
+            "lambda x: x['isInSafeZone'] == True"
+        ],
         effects = [
-            "health = min(100, health + 25)",
-            "potionCount -= 1"
+            "{'health': lambda x: min(100, x['health'] + 25)}",
+            "{'potionCount': lambda x: x['potionCount'] - 1}"
         ]
     ),
     Action(
         name = "attack_enemy",
-        preconditions = ["enemyNearby == True", "health > (15 if isBackup == True else 25)", "stamina > 10"],
+        preconditions = [
+            "lambda x: x['enemyNearby'] == True",
+            """lambda x: x['health'] > (
+                (10 if x['isBackup'] == True else 20) if x['enemyLevel'] == "very_low" else
+                (15 if x['isBackup'] == True else 25) if x['enemyLevel'] == "low" else
+                (20 if x['isBackup'] == True else 35) if x['enemyLevel'] == "medium" else
+                (25 if x['isBackup'] == True else 45) if x['enemyLevel'] == "high" else
+                (30 if x['isBackup'] == True else 55) if x['enemyLevel'] == "very_high" else
+                (15 if x['isBackup'] == True else 25)  # default fallback
+            )""",
+            "lambda x: x['stamina'] > 10"
+        ],
         effects = [
-            "if enemyLevel == 'very_low': health -= (5 if isBackup == True else 10)",
-            "if enemyLevel == 'low': health -= (10 if isBackup == True else 20)",
-            "if enemyLevel == 'medium': health -= (15 if isBackup == True else 30)",
-            "if enemyLevel == 'high': health -= (20 if isBackup == True else 40)",
-            "if enemyLevel == 'very_high': health -= (25 if isBackup == True else 50)",
-            "enemyNearby = False",
-            "enemyLevel = None",
-            "stamina -= 15"
+            """{'health': lambda x: x['health'] - (
+                (5 if x["isBackup"] == True else 10) if x["enemyLevel"] == "very_low" else
+                (10 if x["isBackup"] == True else 20) if x["enemyLevel"] == "low" else
+                (15 if x["isBackup"] == True else 30) if x["enemyLevel"] == "medium" else
+                (20 if x["isBackup"] == True else 40) if x["enemyLevel"] == "high" else
+                (25 if x["isBackup"] == True else 50) if x["enemyLevel"] == "very_high" else
+                0
+            )""",
+            "{'enemyNearby': lambda x: False}",
+            "{'enemyLevel': lambda x: None}",
+            "{'stamina': lambda x: x['stamina'] - 15}"
         ]
     ),
     Action(
         name = "retreat",
-        preconditions = ["enemyNearby == True", "isInSafeZone == False"],
+        preconditions = [
+            "lambda x: x['enemyNearby'] == True",
+            "lambda x: x['isInSafeZone'] == False"
+        ],
         effects = [
-            "enemyNearby = False",
-            "isInSafeZone = True",
-            "stamina += 5"
+            "{'enemyNearby': lambda x: False}",
+            "{'isInSafeZone': lambda x: True}",
+            "{'stamina': lambda x: x['stamina'] + 5}"
         ]
     ),
     Action(
         name = "defend_treasure",
-        preconditions = ["treasureThreatLevel != 'low'", "stamina > 15"],
+        preconditions = [
+            "lambda x: x['treasureThreatLevel'] != 'low'",
+            "lambda x: x['stamina'] > 15"
+        ],
         effects = [
-            "if treasureThreatLevel == 'high': treasureThreatLevel = 'medium'",
-            "if treasureThreatLevel == 'medium': treasureThreatLevel = 'low'",
-            "stamina -= 20"
+            """{'treasureThreatLevel': lambda x: (
+                "medium" if x["treasureThreatLevel"] == "high" else
+                "low" if x["treasureThreatLevel"] == "medium" else
+                x["treasureThreatLevel"]
+            )}""",
+            "{'stamina': lambda x: x['stamina'] - 20}"
         ]
     ),
     Action(
         name = "call_backup",
-        preconditions = ["isInSafeZone == True", "isBackup == False", "stamina >= 40"],
+        preconditions = [
+            "lambda x: x['isInSafeZone'] == True",
+            "lambda x: x['isBackup'] == False",
+            "lambda x: x['stamina'] >= 40"
+        ],
         effects = [
-            "isBackup = True",
-            "stamina -= 40"
+            "{'isBackup': lambda x: True}",
+            "{'stamina': lambda x: x['stamina'] - 40}"
         ]
     ),
     Action(
         name = "search_for_potion",
-        preconditions = ["isInSafeZone == True", "stamina > 15", "potionCount < 2"],
+        preconditions = [
+            "lambda x: x['isInSafeZone'] == True",
+            "lambda x: x['stamina'] > 15",
+            "lambda x: x['potionCount'] < 2"
+        ],
         effects = [
-            "potionCount += 1",
-            "stamina -= 15",
+            "{'potionCount': lambda x: x['potionCount'] + 1}",
+            "{'stamina': lambda x: x['stamina'] - 15}"
         ]
     ),
     Action(
         name = "rest",
-        preconditions = ["isInSafeZone == True", "enemyNearby == False"],
+        preconditions = [
+            "lambda x: x['isInSafeZone'] == True",
+            "lambda x: x['enemyNearby'] == False"
+        ],
         effects = [
-            "stamina = min(100, stamina + 25)",
-            "health = min(100, health + 15)"
+            "{'stamina': lambda x: min(100, x['stamina'] + 25)}",
+            "{'health': lambda x: min(100, x['health'] + 15)}"
         ]
     )
 ]
