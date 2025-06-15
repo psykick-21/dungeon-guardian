@@ -6,6 +6,7 @@ from .type import WorldState, Goals
 
 class AgentState(TypedDict):
     current_world_state: WorldState
+    previous_world_state: WorldState
     goals: Goals
     suggestions: Union[str, None]
     goal_justification: str

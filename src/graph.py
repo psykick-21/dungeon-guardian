@@ -4,7 +4,8 @@ from .states import AgentState
 # from .structs import 
 from .nodes import (
     goal_generator_node,
-    planner_node
+    planner_node,
+    action_executor_node
 )
 from .type import WorldState
 
@@ -14,10 +15,12 @@ builder = StateGraph(AgentState)
 
 builder.add_node("goal_generator", goal_generator_node)
 builder.add_node("planner", planner_node)
+builder.add_node("action_executor", action_executor_node)
 
 builder.add_edge(START, "goal_generator")
 builder.add_edge("goal_generator", "planner")
-builder.add_edge("planner", END)
+builder.add_edge("planner", "action_executor")
+builder.add_edge("action_executor", END)
 
 graph = builder.compile()
 
