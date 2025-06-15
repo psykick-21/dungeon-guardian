@@ -13,6 +13,11 @@ class WorldState(TypedDict):
     isBackup: bool
 
 
+class Goals(TypedDict):
+    primaryGoal: str
+    secondaryGoal: str
+
+
 class Goal(Enum):
     "Enum for the goals of the agent"
     SURVIVE = "survive"
