@@ -4,7 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from dotenv import load_dotenv
 from .prompts import GOAL_GENERATOR_SYSTEM_PROMPT_TEMPLATE
 from .structs import GoalGeneratorResponse
-from ..type import WorldState
+from .type import WorldState
 
 load_dotenv()
 
