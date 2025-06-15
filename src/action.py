@@ -1,9 +1,6 @@
 from typing import List
-from dataclasses import dataclass
 
 
-
-@dataclass
 class Action:
     "Class for the actions of the agent"
 
