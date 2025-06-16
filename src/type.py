@@ -11,6 +11,8 @@ class WorldState(TypedDict):
     enemyLevel: Literal['very_low', 'low', 'medium', 'high', 'very_high', None]
     isInSafeZone: bool
     isBackup: bool
+    treasureHealth: int
+    comfyActions: int
 
 
 class Goals(TypedDict):
