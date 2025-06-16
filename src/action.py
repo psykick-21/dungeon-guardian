@@ -50,15 +50,6 @@ actions = [
         description = "Attack the enemy. This action will decrease your health by a certain amount based on the enemy level. It will also decrease your stamina by 15 points. It will also set the enemyNearby to False. It will also set the enemyLevel to None.",
         preconditions = [
             "lambda x: x['enemyNearby'] == True",
-            """lambda x: x['health'] > (
-                (10 if x['isBackup'] == True else 20) if x['enemyLevel'] == "very_low" else
-                (15 if x['isBackup'] == True else 25) if x['enemyLevel'] == "low" else
-                (20 if x['isBackup'] == True else 35) if x['enemyLevel'] == "medium" else
-                (25 if x['isBackup'] == True else 45) if x['enemyLevel'] == "high" else
-                (30 if x['isBackup'] == True else 55) if x['enemyLevel'] == "very_high" else
-                (15 if x['isBackup'] == True else 25)  # default fallback
-            )""",
-            "lambda x: x['stamina'] > 10"
         ],
         effects = """{
     'health': lambda x: x['health'] - (
@@ -90,7 +81,6 @@ actions = [
         description = "Defend the treasure. It will decrease your stamina by 20 points. It will also decrease your treasure threat level by 1 level.",
         preconditions = [
             "lambda x: x['treasureThreatLevel'] != 'low'",
-            "lambda x: x['stamina'] > 15"
         ],
         effects = """{
     'treasureThreatLevel': lambda x: (
@@ -107,7 +97,6 @@ actions = [
         preconditions = [
             "lambda x: x['isInSafeZone'] == True",
             "lambda x: x['isBackup'] == False",
-            "lambda x: x['stamina'] >= 40"
         ],
         effects = """{
     'isBackup': lambda x: True,
@@ -128,7 +117,6 @@ actions = [
         description = "Search for a potion. This action will increase your potion count by 1. It will also decrease your stamina by 15 points. It will also increase your enemy level by 1 level if you have 2 or more comfy actions accumulated. It will also decrease your treasure health by 10 points if the enemy is nearby.",
         preconditions = [
             "lambda x: x['isInSafeZone'] == True",
-            "lambda x: x['stamina'] > 15",
             "lambda x: x['potionCount'] < 2"
         ],
         effects = """{
@@ -170,7 +158,6 @@ actions = [
         description = "Return to the treasure. This action will set the isInSafeZone to False. It will also decrease your stamina by 10 points.",
         preconditions = [
             "lambda x: x['isInSafeZone'] == True",
-            "lambda x: x['stamina'] >= 10"
         ],
         effects = """{
     'isInSafeZone': lambda x: False,
