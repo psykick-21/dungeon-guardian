@@ -30,7 +30,16 @@ actions = [
         ],
         effects = """{
     'health': lambda x: min(100, x['health'] + 25),
-    'potionCount': lambda x: x['potionCount'] - 1
+    'potionCount': lambda x: x['potionCount'] - 1,
+    'enemyLevel': lambda x: (
+        "high" if x["enemyLevel"] == "medium" else
+        "very_high" if x["enemyLevel"] == "high" else
+        "medium" if x["enemyLevel"] == "low" else
+        "low" if x["enemyLevel"] == "very_low" else
+        x["enemyLevel"]
+    ) if x['comfyActions'] >= 2 else x["enemyLevel"],
+    'comfyActions': lambda x: max(0, x['comfyActions'] + 1 - 2) if x['comfyActions'] >= 2 else x['comfyActions'] + 1,
+    'treasureHealth': lambda x: max(0, x['treasureHealth'] - 10) if x['isInSafeZone'] == True and x['enemyNearby'] == True else x['treasureHealth']
 }"""
     ),
     Action(
@@ -95,7 +104,16 @@ actions = [
         ],
         effects = """{
     'isBackup': lambda x: True,
-    'stamina': lambda x: x['stamina'] - 40
+    'stamina': lambda x: x['stamina'] - 40,
+    'enemyLevel': lambda x: (
+        "high" if x["enemyLevel"] == "medium" else
+        "very_high" if x["enemyLevel"] == "high" else
+        "medium" if x["enemyLevel"] == "low" else
+        "low" if x["enemyLevel"] == "very_low" else
+        x["enemyLevel"]
+    ) if x['comfyActions'] >= 2 else x["enemyLevel"],
+    'comfyActions': lambda x: max(0, x['comfyActions'] + 1 - 2) if x['comfyActions'] >= 2 else x['comfyActions'] + 1,
+    'treasureHealth': lambda x: max(0, x['treasureHealth'] - 10) if x['isInSafeZone'] == True and x['enemyNearby'] == True else x['treasureHealth']
 }"""
     ),
     Action(
@@ -107,7 +125,16 @@ actions = [
         ],
         effects = """{
     'potionCount': lambda x: x['potionCount'] + 1,
-    'stamina': lambda x: x['stamina'] - 15
+    'stamina': lambda x: x['stamina'] - 15,
+    'enemyLevel': lambda x: (
+        "high" if x["enemyLevel"] == "medium" else
+        "very_high" if x["enemyLevel"] == "high" else
+        "medium" if x["enemyLevel"] == "low" else
+        "low" if x["enemyLevel"] == "very_low" else
+        x["enemyLevel"]
+    ) if x['comfyActions'] >= 2 else x["enemyLevel"],
+    'comfyActions': lambda x: max(0, x['comfyActions'] + 1 - 2) if x['comfyActions'] >= 2 else x['comfyActions'] + 1,
+    'treasureHealth': lambda x: max(0, x['treasureHealth'] - 10) if x['isInSafeZone'] == True and x['enemyNearby'] == True else x['treasureHealth']
 }"""
     ),
     Action(
@@ -118,7 +145,27 @@ actions = [
         ],
         effects = """{
     'stamina': lambda x: min(100, x['stamina'] + 25),
-    'health': lambda x: min(100, x['health'] + 15)
+    'health': lambda x: min(100, x['health'] + 15),
+    'enemyLevel': lambda x: (
+        "high" if x["enemyLevel"] == "medium" else
+        "very_high" if x["enemyLevel"] == "high" else
+        "medium" if x["enemyLevel"] == "low" else
+        "low" if x["enemyLevel"] == "very_low" else
+        x["enemyLevel"]
+    ) if x['comfyActions'] >= 2 else x["enemyLevel"],
+    'comfyActions': lambda x: max(0, x['comfyActions'] + 1 - 2) if x['comfyActions'] >= 2 else x['comfyActions'] + 1,
+    'treasureHealth': lambda x: max(0, x['treasureHealth'] - 10) if x['isInSafeZone'] == True and x['enemyNearby'] == True else x['treasureHealth']
+}"""
+    ),
+    Action(
+        name = "return_to_treasure",
+        preconditions = [
+            "lambda x: x['isInSafeZone'] == True",
+            "lambda x: x['stamina'] >= 10"
+        ],
+        effects = """{
+    'isInSafeZone': lambda x: False,
+    'stamina': lambda x: x['stamina'] - 10
 }"""
     )
 ]
