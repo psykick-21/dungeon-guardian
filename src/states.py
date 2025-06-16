@@ -1,10 +1,11 @@
-from typing import TypedDict, Union, Sequence, Annotated
+from typing import TypedDict, Union, Annotated, List
 from langchain_core.messages import BaseMessage
 import operator
 from .type import WorldState, Goals
 
 
 class AgentState(TypedDict):
+    messages: Annotated[List[BaseMessage], operator.add]
     current_world_state: WorldState
     previous_world_state: WorldState
     goals: Goals
@@ -12,4 +13,9 @@ class AgentState(TypedDict):
     goal_justification: str
     action_sequence: list[str]
     planner_justification: str
+    failure_occurred: bool
+    failure_reason: str
+    success_occurred: bool
+    success_reason: str
+    action_failed: bool
     
