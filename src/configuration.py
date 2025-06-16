@@ -2,6 +2,7 @@ from dataclasses import dataclass, fields
 from langchain_core.runnables import RunnableConfig
 import os
 from typing import Any
+import uuid
 
 @dataclass(kw_only=True)
 class Configuration:
@@ -9,6 +10,8 @@ class Configuration:
     provider: str = "openai"
     model: str = "gpt-4o-mini"
     temperature: float = 0.5
+    log_path: str = "/Users/psykick/Documents/GitHub/dungeon-guardian/temp"
+    thread_id: str = str(uuid.uuid4())
     
     @classmethod
     def from_runnable_config(
