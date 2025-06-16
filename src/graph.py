@@ -7,7 +7,8 @@ from .nodes import (
     planner_node,
     action_executor_node,
     check_success_conditions_node,
-    logger_node
+    logger_node,
+    failure_analysis_node
 )
 from .type import WorldState
 from .routers import success_router
@@ -21,13 +22,15 @@ builder.add_node("planner", planner_node)
 builder.add_node("action_executor", action_executor_node)
 builder.add_node("check_success_conditions", check_success_conditions_node)
 builder.add_node("logger_node", logger_node)
+builder.add_node("failure_analysis_node", failure_analysis_node)
 
 builder.add_edge(START, "goal_generator")
 builder.add_edge("goal_generator", "planner")
 builder.add_edge("planner", "action_executor")
 builder.add_edge("action_executor", "check_success_conditions")
 builder.add_conditional_edges("check_success_conditions", success_router)
-builder.add_edge("logger_node", END)
+builder.add_edge("logger_node", "failure_analysis_node")
+builder.add_edge("failure_analysis_node", END)
 
 graph = builder.compile()
 
@@ -48,7 +51,7 @@ if __name__ == "__main__":
     )
     
     events = graph.stream({"current_world_state": world_state}, {"recursion_limit": 100})
-    
+
     for event in events:
         if "goal_generator" in event:
             print("<<< GOAL GENERATOR >>>")
@@ -76,6 +79,11 @@ if __name__ == "__main__":
 
         elif "logger_node" in event:
             print("Logging event...")
+
+        elif "failure_analysis_node" in event:
+            print("<<< FAILURE ANALYSIS >>>")
+            print(event["failure_analysis_node"]["messages"][-1].content)
+            print("--------------------------------\n\n")
         
         else:
             print(event)
