@@ -8,14 +8,16 @@ class Action:
             self,
             name: str,
             preconditions: List[str],
-            effects: str
+            effects: str,
+            description: str
     ):
         self.name = name
         self.preconditions = preconditions
         self.effects = effects
+        self.description = description
 
     def __str__(self):
-        return f"Action(name={self.name}, preconditions={self.preconditions}, effects={self.effects})"
+        return f"Action(name={self.name}, description={self.description}, preconditions={self.preconditions}, effects={self.effects})"
     
     def __repr__(self):
         return self.__str__()
@@ -24,6 +26,7 @@ class Action:
 actions = [
     Action(
         name = "heal_self",
+        description = "Heal yourself by using a potion. This action will increase your health by 25 points. It will also decrease your potion count by 1. It will also decrease your stamina by 10 points. It will also increase your comfy actions by 1. It will also increase your enemy level by 1 level if you have 2 or more comfy actions accumulated It will also decrease your treasure health by 10 points if the enemy is nearby.",
         preconditions = [
             "lambda x: x['potionCount'] > 0",
             "lambda x: x['isInSafeZone'] == True"
@@ -44,6 +47,7 @@ actions = [
     ),
     Action(
         name = "attack_enemy",
+        description = "Attack the enemy. This action will decrease your health by a certain amount based on the enemy level. It will also decrease your stamina by 15 points. It will also set the enemyNearby to False. It will also set the enemyLevel to None.",
         preconditions = [
             "lambda x: x['enemyNearby'] == True",
             """lambda x: x['health'] > (
@@ -72,6 +76,7 @@ actions = [
     ),
     Action(
         name = "retreat",
+        description = "Retreat to the safe zone. This action will set the isInSafeZone to True. It will also decrease your stamina by 5 points.",
         preconditions = [
             "lambda x: x['isInSafeZone'] == False"
         ],
@@ -82,6 +87,7 @@ actions = [
     ),
     Action(
         name = "defend_treasure",
+        description = "Defend the treasure. It will decrease your stamina by 20 points. It will also decrease your treasure threat level by 1 level.",
         preconditions = [
             "lambda x: x['treasureThreatLevel'] != 'low'",
             "lambda x: x['stamina'] > 15"
@@ -97,6 +103,7 @@ actions = [
     ),
     Action(
         name = "call_backup",
+        description = "Call for backup. This action will set the isBackup to True. It will also decrease your stamina by 40 points. It will also increase your enemy level by 1 level if you have 2 or more comfy actions accumulated. It will also decrease your treasure health by 10 points if the enemy is nearby.",
         preconditions = [
             "lambda x: x['isInSafeZone'] == True",
             "lambda x: x['isBackup'] == False",
@@ -118,6 +125,7 @@ actions = [
     ),
     Action(
         name = "search_for_potion",
+        description = "Search for a potion. This action will increase your potion count by 1. It will also decrease your stamina by 15 points. It will also increase your enemy level by 1 level if you have 2 or more comfy actions accumulated. It will also decrease your treasure health by 10 points if the enemy is nearby.",
         preconditions = [
             "lambda x: x['isInSafeZone'] == True",
             "lambda x: x['stamina'] > 15",
@@ -139,9 +147,9 @@ actions = [
     ),
     Action(
         name = "rest",
+        description = "Rest. This action will increase your stamina by 25 points. It will also increase your health by 15 points. It will also increase your enemy level by 1 level if you have 2 or more comfy actions accumulated. It will also decrease your treasure health by 10 points if the enemy is nearby.",
         preconditions = [
             "lambda x: x['isInSafeZone'] == True",
-            "lambda x: x['enemyNearby'] == False"
         ],
         effects = """{
     'stamina': lambda x: min(100, x['stamina'] + 25),
@@ -159,6 +167,7 @@ actions = [
     ),
     Action(
         name = "return_to_treasure",
+        description = "Return to the treasure. This action will set the isInSafeZone to False. It will also decrease your stamina by 10 points.",
         preconditions = [
             "lambda x: x['isInSafeZone'] == True",
             "lambda x: x['stamina'] >= 10"
