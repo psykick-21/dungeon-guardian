@@ -15,7 +15,8 @@ from .configuration import Configuration
 from .utils import init_llm, create_agent, check_failure_conditions, check_success_conditions
 from .prompts import (
     GOAL_GENERATOR_SYSTEM_PROMPT_TEMPLATE,
-    PLANNER_SYSTEM_PROMPT_TEMPLATE
+    PLANNER_SYSTEM_PROMPT_TEMPLATE,
+    FAILURE_ANALYSIS_SYSTEM_PROMPT_TEMPLATE
 )
 from .type import Goals, Goal
 from .structs import (
@@ -32,7 +33,14 @@ import json
 def goal_generator_node(state: AgentState, config: RunnableConfig) -> AgentState:
     
     configurable = Configuration.from_runnable_config(config)
-    
+    learning_path = configurable.learning_path
+
+    if os.path.exists(os.path.join(learning_path, "failure_analysis.txt")):
+        with open(os.path.join(learning_path, "failure_analysis.txt"), "r") as f:
+            failure_analysis = f.read()
+    else:
+        failure_analysis = ""
+
     llm = init_llm(
         provider=configurable.provider,
         model=configurable.model,
@@ -45,7 +53,7 @@ def goal_generator_node(state: AgentState, config: RunnableConfig) -> AgentState
         HumanMessagePromptTemplate.from_template(
             template = """
             ## Current world state: \n{current_world_state}\n
-            ## Learnings from past failures: ''
+            ## Learnings from past failures: \n{failure_analysis}\n
             """
         )
     ])
@@ -56,7 +64,7 @@ def goal_generator_node(state: AgentState, config: RunnableConfig) -> AgentState
         output_structure=GoalGeneratorResponse
     )
 
-    result = goal_generator_agent.invoke(state)
+    result = goal_generator_agent.invoke({**state, "failure_analysis": failure_analysis})
 
     return {
         "messages": [
@@ -64,7 +72,7 @@ def goal_generator_node(state: AgentState, config: RunnableConfig) -> AgentState
             AIMessage(content=f"{result}")
         ],
         "goals": Goals(primaryGoal=result.primaryGoal, secondaryGoal=result.secondaryGoal),
-        "suggestions": result.adaptationSuggestions,
+        "actionFailureSuggestions": result.actionFailureSuggestions,
         "goal_justification": result.justification
     }
 
@@ -86,7 +94,7 @@ def planner_node(state: AgentState, config: RunnableConfig) -> AgentState:
             template="""
             ## Current world state:\n{current_world_state}\n
             ## Goals: \n{goals}\n
-            ## Suggestions: \n{suggestions}\n
+            ## Action failure reasons: \n{actionFailureSuggestions}\n
             """
         )
     ])
@@ -96,6 +104,15 @@ def planner_node(state: AgentState, config: RunnableConfig) -> AgentState:
         prompt=planner_system_prompt,
         output_structure=PlannerResponse
     )
+
+    with open("/Users/psykick/Documents/GitHub/dungeon-guardian/temp/planner_prompt.txt", "w") as f:
+        f.write(repr(planner_system_prompt.invoke({
+            "actions": actions, 
+            "goals": Goal._member_names_,
+            "current_world_state": 'world_state',
+            "actionFailureSuggestions": 'actionFailureSuggestions',
+            "goals": 'goals'
+        })))
 
     result = planner_agent.invoke({**state, "actions": actions, "goals": Goal._member_names_})
 
@@ -210,14 +227,75 @@ def logger_node(state: AgentState, config: RunnableConfig) -> AgentState:
     log_path = configurable.log_path
     thread_id = configurable.thread_id
 
-    payload = {
-        "thread_id": thread_id,
+    os.makedirs(log_path, exist_ok=True)
+
+    payload = json.dumps({
         "messages": dumps(state["messages"]),
         "status": "success" if state["success_occurred"] else "failure",
         "success_reason": state["success_reason"],
-    }
+    }, indent=4)
 
     with open(f"{log_path}/{thread_id}.json", "w") as f:
-        f.write(json.dumps(payload))
+        f.write(payload)
     
     return {}
+
+
+
+def failure_analysis_node(state: AgentState, config: RunnableConfig) -> AgentState:
+    
+    configurable = Configuration.from_runnable_config(config)
+    learning_path = configurable.learning_path
+
+    os.makedirs(learning_path, exist_ok=True)
+
+    if os.path.exists(os.path.join(learning_path, "failure_analysis.txt")):
+        with open(os.path.join(learning_path, "failure_analysis.txt"), "r") as f:
+            failure_analysis = f.read()
+    else:
+        failure_analysis = ""
+
+    new_episode = json.dumps({
+        "messages": dumps(state["messages"]),
+        "status": "success" if state["success_occurred"] else "failure",
+        "success_reason": state["success_reason"],
+    }, indent=4)
+
+    llm = init_llm(
+        provider=configurable.provider,
+        model=configurable.model,
+        temperature=configurable.temperature
+    )
+
+    failure_analysis_system_prompt = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(FAILURE_ANALYSIS_SYSTEM_PROMPT_TEMPLATE),
+        HumanMessagePromptTemplate.from_template(
+            template="""
+            ## Historical Failure Summary:
+            \nThis is what you have analyzed and created in the past. Use this and the content from new episode to create a new failure analysis.\n
+            {failure_analysis}
+
+            ## New Episode:
+            {new_episode}
+            """
+        ),
+    ])
+
+    failure_analysis_agent = create_agent(
+        llm=llm,
+        prompt=failure_analysis_system_prompt,
+    )
+
+    result = failure_analysis_agent.invoke({
+        "failure_analysis": failure_analysis,
+        "new_episode": new_episode
+    })
+
+    with open(os.path.join(learning_path, "failure_analysis.txt"), "w") as f:
+        f.write(result.content)
+
+    return {
+        "messages": [
+            AIMessage(content=f"{result.content}")
+        ]
+    }
