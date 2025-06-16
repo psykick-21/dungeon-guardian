@@ -13,6 +13,7 @@ class Configuration:
     log_path: str = "/Users/psykick/Documents/GitHub/dungeon-guardian/temp/game_logs"
     learning_path: str = "/Users/psykick/Documents/GitHub/dungeon-guardian/temp/learning"
     thread_id: str = str(uuid.uuid4())
+    total_iterations: int = 10
     
     @classmethod
     def from_runnable_config(

@@ -16,6 +16,7 @@ class AgentState(TypedDict):
     failure_occurred: bool
     failure_reason: str
     success_occurred: bool
-    success_reason: str
+    end_reason: str
     action_failed: bool
+    iterations: int
     
