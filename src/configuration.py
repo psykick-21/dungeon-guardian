@@ -10,7 +10,8 @@ class Configuration:
     provider: str = "openai"
     model: str = "gpt-4o-mini"
     temperature: float = 0.5
-    log_path: str = "/Users/psykick/Documents/GitHub/dungeon-guardian/temp"
+    log_path: str = "/Users/psykick/Documents/GitHub/dungeon-guardian/temp/game_logs"
+    learning_path: str = "/Users/psykick/Documents/GitHub/dungeon-guardian/temp/learning"
     thread_id: str = str(uuid.uuid4())
     
     @classmethod
