@@ -7,6 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
+from .type import WorldState
 
 load_dotenv()
 
@@ -86,3 +87,62 @@ def create_agent(
         agent = agent.with_tools(tools)
 
     return agent
+
+def check_failure_conditions(world_state: WorldState) -> tuple[bool, str]:
+    """
+    Check if the agent has failed based on the current world state.
+    
+    Args:
+        world_state: The current WorldState to check
+        
+    Returns:
+        tuple[bool, str]: (is_failed, failure_reason)
+            - is_failed: True if the agent has failed, False otherwise
+            - failure_reason: Description of why the agent failed, empty string if not failed
+    """
+    
+    # Check for agent death
+    if world_state.get('health', 100) <= 0:
+        return True, "Agent died - health reached 0"
+    
+    # Check for treasure destruction
+    if world_state.get('treasureHealth', 100) <= 0:
+        return True, "Treasure was destroyed - treasureHealth reached 0"
+    
+    # Check for critical exhaustion (no stamina and low health in danger)
+    if (world_state.get('stamina', 100) <= 0 and 
+        world_state.get('health', 100) <= 15 and 
+        world_state.get('enemyNearby', False) == True and
+        world_state.get('isInSafeZone', True) == False):
+        return True, "Agent is exhausted and trapped - no stamina, low health, enemy nearby, not in safe zone"
+    
+    # Check for impossible situation (enemy too strong, no resources)
+    if (world_state.get('enemyNearby', False) == True and
+        world_state.get('enemyLevel') == 'very_high' and
+        world_state.get('health', 100) <= 30 and
+        world_state.get('stamina', 100) <= 10 and
+        world_state.get('potionCount', 0) == 0 and
+        world_state.get('isBackup', False) == False):
+        return True, "Impossible situation - very high enemy, low health/stamina, no potions, no backup"
+    
+    return False, ""
+
+def check_success_conditions(world_state: WorldState) -> tuple[bool, str]:
+    """
+    Check if the agent has succeeded based on the current world state.
+    
+    Args:
+        world_state: The current WorldState to check
+        
+    Returns:
+        tuple[bool, str]: (is_successful, success_reason)
+            - is_successful: True if the agent has succeeded, False otherwise
+            - success_reason: Description of why the agent succeeded, empty string if not successful
+    """
+    
+    # Primary success condition: All threats eliminated and treasure protected
+    if (world_state.get('enemyNearby', True) == False and
+        world_state.get('treasureThreatLevel', 'high') == 'low'):
+        return True, "Mission accomplished! All enemies defeated, treasure threat neutralized, and treasure well-protected"
+    
+    return False, ""
