@@ -25,7 +25,7 @@ from .structs import (
 )
 import time
 import os
-from .action import actions, actions_dict
+from .action import action_descriptions, actions_dict
 import json
 
 
@@ -105,16 +105,7 @@ def planner_node(state: AgentState, config: RunnableConfig) -> AgentState:
         output_structure=PlannerResponse
     )
 
-    with open("/Users/psykick/Documents/GitHub/dungeon-guardian/temp/planner_prompt.txt", "w") as f:
-        f.write(repr(planner_system_prompt.invoke({
-            "actions": actions, 
-            "goals": Goal._member_names_,
-            "current_world_state": 'world_state',
-            "actionFailureSuggestions": 'actionFailureSuggestions',
-            "goals": 'goals'
-        })))
-
-    result = planner_agent.invoke({**state, "actions": actions, "goals": Goal._member_names_})
+    result = planner_agent.invoke({**state, "actions": action_descriptions, "goals": Goal._member_names_})
 
     return {
         "messages": [AIMessage(content=f"{result}")],
@@ -144,7 +135,7 @@ def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentStat
         
         # Check all preconditions
         for precondition in action_obj.preconditions:
-            if not eval(precondition)(current_world_state):
+            if not precondition(current_world_state):
                 preconditions_met = False
                 game_message += f"Action {action_name} failed because {precondition} is not met.\n"
                 action_failed = True
@@ -152,7 +143,7 @@ def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentStat
 
         if preconditions_met:
             # Execute the action by applying its effects
-            for key, value in eval(action_obj.effects).items():
+            for key, value in action_obj.effects.items():
                 current_world_state[key] = value(current_world_state)
             
             executed_actions.append(action_name)
@@ -196,9 +187,13 @@ def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentStat
 
 
 def check_success_conditions_node(state: AgentState, config: RunnableConfig) -> AgentState:
+
+    configurable = Configuration.from_runnable_config(config)
+    iterations = state.get("iterations", 0) + 1
     
     game_message = ""
     is_successful, success_msg = check_success_conditions(state['current_world_state'])
+    
     if is_successful:
         game_message += f"Congratulations! {success_msg}\n"
         
@@ -207,17 +202,27 @@ def check_success_conditions_node(state: AgentState, config: RunnableConfig) -> 
                 SystemMessage(content=game_message)
             ],
             "success_occurred": is_successful,
-            "success_reason": success_msg
+            "end_reason": success_msg
         }
     
     else:
+    
+        if iterations >= configurable.total_iterations:
+            return {
+                "messages": [
+                    SystemMessage(content=f"The game has run out of iterations. The game is still running.")
+                ],
+                "success_occurred": is_successful,
+                "end_reason": "The game has run out of iterations."
+            }
+        
         game_message += f"The game is still running.\n"
         return {
             "messages": [
                 SystemMessage(content=game_message)
             ],
             "success_occurred": is_successful,
-            "success_reason": success_msg
+            "end_reason": success_msg
         }
     
 
@@ -232,7 +237,7 @@ def logger_node(state: AgentState, config: RunnableConfig) -> AgentState:
     payload = json.dumps({
         "messages": dumps(state["messages"]),
         "status": "success" if state["success_occurred"] else "failure",
-        "success_reason": state["success_reason"],
+        "end_reason": state["end_reason"],
     }, indent=4)
 
     with open(f"{log_path}/{thread_id}.json", "w") as f:
@@ -258,7 +263,7 @@ def failure_analysis_node(state: AgentState, config: RunnableConfig) -> AgentSta
     new_episode = json.dumps({
         "messages": dumps(state["messages"]),
         "status": "success" if state["success_occurred"] else "failure",
-        "success_reason": state["success_reason"],
+        "end_reason": state["end_reason"],
     }, indent=4)
 
     llm = init_llm(
