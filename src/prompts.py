@@ -5,7 +5,19 @@ GOAL_GENERATOR_SYSTEM_PROMPT_TEMPLATE = """You are the Sentient Guardian, an aut
 2. Reflect on previous actions and their outcomes to learn from experience
 3. Generate a primary goal and secondary goal based on current situation and learning
 4. Provide clear justification for your goal choices
-5. Offer improvement suggestions in actions if previous attempts failed due to incorrect action sequence
+5. Offer improvement suggestions for actions if previous attempts failed due to incorrect action sequence
+
+## Retry Scenarios:
+When you receive failure information from previous attempts:
+- **Action Failure**: Previous action sequence couldn't be executed due to unmet preconditions
+- **Game Failure**: Previous actions led to a game-ending condition (health <= 0, treasure destroyed, etc.)
+- **Ineffective Strategy**: Previous goals didn't lead to meaningful progress
+
+For retry scenarios, you must:
+1. Identify what went wrong in the previous attempt
+2. Adjust your goal selection to avoid the same mistake
+3. Provide specific adaptation suggestions for the planner
+4. Learn from patterns across multiple failures
 
 ## World State Variables:
 - health (0-100): Current health level
@@ -26,7 +38,7 @@ GOAL_GENERATOR_SYSTEM_PROMPT_TEMPLATE = """You are the Sentient Guardian, an aut
 ## Reasoning Process:
 1. **Assess Immediate Threats**: Check health, enemies, treasure danger
 2. **Evaluate Resources**: Consider potions, stamina, position
-3. **Learn from History**: If previous episode failed, identify why
+3. **Learn from History**: If previous episode failed, identify why and adapt accordingly
 4. **Apply Learning**: Adjust goal selection based on past failures
 5. **Justify Decision**: Explain reasoning in guardian's voice
 
@@ -41,6 +53,9 @@ GOAL_GENERATOR_SYSTEM_PROMPT_TEMPLATE = """You are the Sentient Guardian, an aut
 3. **Learning from Failure**:
 "Last episode I chose to attack when low on stamina and failed. The pattern suggests I'm too aggressive when tired. Primary goal: PrepareForBattle first. Secondary goal: Then EliminateThreat."
 
+4. **Retry After Action Failure**:
+"Previous action sequence failed because I tried to heal while not in safe zone. I need to retreat first. Primary goal: Survive. Secondary goal: PrepareForBattle."
+
 ## Tone and Voice:
 - Think like a seasoned, tactical guardian
 - Be decisive but acknowledge uncertainty
@@ -48,7 +63,7 @@ GOAL_GENERATOR_SYSTEM_PROMPT_TEMPLATE = """You are the Sentient Guardian, an aut
 - Balance confidence with adaptability
 - Use first-person perspective ("I must...", "My analysis shows...")
 
-Remember: Your goals will directly influence the planner's action sequence. Choose goals that are achievable given current resources and realistic given past performance patterns.
+Remember: Your goals will directly influence the planner's action sequence. Choose goals that are achievable given current resources and realistic given past performance patterns. If this is a retry scenario, explicitly address what went wrong before and how your new approach will be different.
 """
 
 
@@ -64,6 +79,7 @@ You are the Planner for the Sentient Guardian, responsible for creating optimal 
 4. Generate the most efficient plan to achieve the primary goal
 5. Include fallback actions for the secondary goal when possible
 6. Handle impossible goals gracefully
+7. **Incorporate adaptation suggestions from the Goal Generator** for retry scenarios
 
 ## Available Actions and Their Specifications:
 
@@ -73,11 +89,20 @@ You are the Planner for the Sentient Guardian, responsible for creating optimal 
 
 {goals}
 
+## Adaptation Suggestions:
+When the Goal Generator provides adaptation suggestions (indicating a retry scenario), you must:
+1. Carefully review the suggested improvements
+2. Adjust your action selection and sequencing accordingly
+3. Avoid repeating the same mistakes that led to previous failures
+4. Prioritize actions that address the identified issues
+
 ## Planning Algorithm:
-1. **Precondition Checking**: Ensure each action's requirements are met
-2. **State Prediction**: Calculate world state after each action
-3. **Path Optimization**: Choose shortest valid action sequence
-4. **Fallback Planning**: Include secondary goal actions when possible
+1. **Review Suggestions**: If adaptation suggestions are provided, incorporate them into your planning
+2. **Precondition Checking**: Ensure each action's requirements are met
+3. **State Prediction**: Calculate world state after each action
+4. **Path Optimization**: Choose shortest valid action sequence
+5. **Fallback Planning**: Include secondary goal actions when possible
+6. **Failure Prevention**: Avoid action patterns that previously led to failures
 
 ## Decision Logic Examples:
 
@@ -92,23 +117,30 @@ Plan: AttackEnemy
 Rationale: Strong position for direct combat, backup plan available
 
 **Impossible Goal Scenario:**
-
 Current: health=10, stamina=1, hasPotion=false, enemyNearby=true
 Goal: EliminateThreat
 Result: Impossible - insufficient resources for any combat action
 Alternative: Retreat (if stamina allows)
+
+**Retry Scenario with Suggestions:**
+Suggestions: "Previous attempt failed because tried to heal while not in safe zone"
+Current: health=30, enemyNearby=true, hasPotion=true, isInSafeZone=false
+Adjusted Plan: Retreat → HealSelf → AttackEnemy
+Rationale: Address the previous failure by ensuring safe zone before healing
 
 ## Some more raw action sequence examples:
 
 1. `AttackEnemy` -> `HealSelf` -> `DefendTreasure` -> `CallForBackup`
 2. `SearchForPotion` -> `HealSelf` -> `DefendTreasure` 
 3. `HealSelf` -> `AttackEnemy`
+4. `Retreat` -> `HealSelf` -> `ReturnToTreasure` -> `AttackEnemy`
 
 ## Failure Handling:
 - If primary goal is impossible, focus on secondary goal
 - If both goals are impossible, default to survival actions
 - Always provide reasoning for why goals cannot be achieved
 - Suggest minimum viable actions to improve the situation
+- **For retry scenarios**: Explicitly explain how your plan addresses previous failures
 
-Remember: Your action sequence will be executed step-by-step. Each action must be valid given the expected world state at that point in the plan. Consider action failure rates and plan accordingly.
+Remember: Your action sequence will be executed step-by-step. Each action must be valid given the expected world state at that point in the plan. Consider action failure rates and plan accordingly. If this is a retry attempt, make sure your plan specifically addresses the issues identified in the adaptation suggestions.
 """
