@@ -49,11 +49,11 @@ def goal_generator_node(state: AgentState, config: RunnableConfig) -> AgentState
 
     goal_generator_system_prompt = ChatPromptTemplate.from_messages([
         SystemMessagePromptTemplate.from_template(GOAL_GENERATOR_SYSTEM_PROMPT_TEMPLATE),
-        MessagesPlaceholder(variable_name="messages"),
+        SystemMessage(content=json.dumps(state['messages'])),
         HumanMessagePromptTemplate.from_template(
             template = """
-            ## Current world state: \n{current_world_state}\n
-            ## Learnings from past failures: \n{failure_analysis}\n
+            ## Current world state: \n{currentWorldState}\n
+            ## Learnings from past failures: \n{failureAnalysis}\n
             """
         )
     ])
@@ -64,16 +64,15 @@ def goal_generator_node(state: AgentState, config: RunnableConfig) -> AgentState
         output_structure=GoalGeneratorResponse
     )
 
-    result = goal_generator_agent.invoke({**state, "failure_analysis": failure_analysis})
+    result = goal_generator_agent.invoke({**state, "failureAnalysis": failure_analysis})
 
     return {
         "messages": [
-            HumanMessage(content=f"Current world state: \n{state['current_world_state']}"),
-            AIMessage(content=f"{result}")
+            {"worldState": state["currentWorldState"]},
+            {**result.model_dump()}
         ],
-        "goals": Goals(primaryGoal=result.primaryGoal, secondaryGoal=result.secondaryGoal),
-        "actionFailureSuggestions": result.actionFailureSuggestions,
-        "goal_justification": result.justification
+        "currentWorldState": state["currentWorldState"],
+        **result.model_dump()
     }
 
 
@@ -92,7 +91,7 @@ def planner_node(state: AgentState, config: RunnableConfig) -> AgentState:
         SystemMessagePromptTemplate.from_template(PLANNER_SYSTEM_PROMPT_TEMPLATE),
         HumanMessagePromptTemplate.from_template(
             template="""
-            ## Current world state:\n{current_world_state}\n
+            ## Current world state:\n{currentWorldState}\n
             ## Goals: \n{goals}\n
             ## Action failure reasons: \n{actionFailureSuggestions}\n
             """
@@ -108,18 +107,17 @@ def planner_node(state: AgentState, config: RunnableConfig) -> AgentState:
     result = planner_agent.invoke({**state, "actions": action_descriptions, "goals": Goal._member_names_})
 
     return {
-        "messages": [AIMessage(content=f"{result}")],
-        "action_sequence": result.actionSequence,
-        "planner_justification": result.reasoning
+        "messages": [{**result.model_dump()}],
+        **result.model_dump()
     }
 
 
 
 def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentState:
     
-    previous_world_state = state["current_world_state"]
-    current_world_state = state["current_world_state"].copy()
-    action_sequence = state["action_sequence"]
+    previous_world_state = state["currentWorldState"]
+    current_world_state = state["currentWorldState"].copy()
+    action_sequence = state["actionSequence"]
     
     executed_actions = []
     failure_occurred = False
@@ -134,16 +132,16 @@ def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentStat
         preconditions_met = True
         
         # Check all preconditions
-        for precondition in action_obj.preconditions:
+        for precondition in action_obj["preconditions"]:
             if not precondition(current_world_state):
                 preconditions_met = False
-                game_message += f"Action {action_name} failed because {precondition} is not met.\n"
+                game_message += f"Action {action_name} failed because precondition is not met.\n"
                 action_failed = True
                 break
 
         if preconditions_met:
             # Execute the action by applying its effects
-            for key, value in action_obj.effects.items():
+            for key, value in action_obj["effects"].items():
                 current_world_state[key] = value(current_world_state)
             
             executed_actions.append(action_name)
@@ -154,16 +152,17 @@ def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentStat
                 failure_occurred = True
                 failure_reason = reason
                 game_message += f"You have failed due to the following reason: {reason}.\nPlease try again."
+                game_message += f"Executed actions: {executed_actions}"
 
                 return {
                     "messages": [
-                        SystemMessage(content=game_message)
+                        {"gameMessage": game_message}
                     ],
-                    "current_world_state": previous_world_state,
-                    "previous_world_state": previous_world_state,
-                    "failure_occurred": failure_occurred,
-                    "failure_reason": failure_reason,
-                    "action_failed": action_failed,
+                    "currentWorldState": previous_world_state,
+                    "previousWorldState": previous_world_state,
+                    "failureOccurred": failure_occurred,
+                    "failureReason": failure_reason,
+                    "actionFailed": action_failed,
                 }
                 
         else:
@@ -171,17 +170,18 @@ def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentStat
             continue
 
     game_message += f"No game failure occurred."
+    game_message += f"Executed actions: {executed_actions}"
 
 
     return {
         "messages": [
-            SystemMessage(content=game_message)
+            {"gameMessage": game_message}
         ],
-        "current_world_state": current_world_state,
-        "previous_world_state": previous_world_state,
-        "failure_occurred": failure_occurred,
-        "failure_reason": failure_reason,
-        "action_failed": action_failed,
+        "currentWorldState": current_world_state,
+        "previousWorldState": previous_world_state,
+        "failureOccurred": failure_occurred,
+        "failureReason": failure_reason,
+        "actionFailed": action_failed,
     }
     
 
@@ -192,17 +192,17 @@ def check_success_conditions_node(state: AgentState, config: RunnableConfig) -> 
     iterations = state.get("iterations", 0) + 1
     
     game_message = ""
-    is_successful, success_msg = check_success_conditions(state['current_world_state'])
+    is_successful, success_msg = check_success_conditions(state['currentWorldState'])
     
     if is_successful:
         game_message += f"Congratulations! {success_msg}\n"
         
         return {
             "messages": [
-                SystemMessage(content=game_message)
+                {"gameMessage": game_message}
             ],
-            "success_occurred": is_successful,
-            "end_reason": success_msg
+            "successOccurred": is_successful,
+            "endReason": success_msg
         }
     
     else:
@@ -210,19 +210,19 @@ def check_success_conditions_node(state: AgentState, config: RunnableConfig) -> 
         if iterations >= configurable.total_iterations:
             return {
                 "messages": [
-                    SystemMessage(content=f"The game has run out of iterations. The game is still running.")
+                    {"gameMessage": "You have run out of maximum permissible iterations. The game has ended without success or failure."}
                 ],
-                "success_occurred": is_successful,
-                "end_reason": "The game has run out of iterations."
+                "successOccurred": is_successful,
+                "endReason": "The game has run out of iterations."
             }
         
-        game_message += f"The game is still running.\n"
+        game_message += f"The game is still running. Please continue.\n"
         return {
             "messages": [
-                SystemMessage(content=game_message)
+                {"gameMessage": game_message}
             ],
-            "success_occurred": is_successful,
-            "end_reason": success_msg
+            "successOccurred": is_successful,
+            "endReason": success_msg
         }
     
 
@@ -234,14 +234,14 @@ def logger_node(state: AgentState, config: RunnableConfig) -> AgentState:
 
     os.makedirs(log_path, exist_ok=True)
 
-    payload = json.dumps({
-        "messages": dumps(state["messages"]),
-        "status": "success" if state["success_occurred"] else "failure",
-        "end_reason": state["end_reason"],
-    }, indent=4)
+    payload = {
+        "messages": state["messages"],
+        "status": "success" if state["successOccurred"] else "failure" if state["failureOccurred"] else "timed_out",
+        "endReason": state["endReason"] if state["endReason"] != "" else "The game has run out of iterations."
+    }
 
     with open(f"{log_path}/{thread_id}.json", "w") as f:
-        f.write(payload)
+        json.dump(payload, f, indent=4)
     
     return {}
 
@@ -260,11 +260,11 @@ def failure_analysis_node(state: AgentState, config: RunnableConfig) -> AgentSta
     else:
         failure_analysis = ""
 
-    new_episode = json.dumps({
-        "messages": dumps(state["messages"]),
-        "status": "success" if state["success_occurred"] else "failure",
-        "end_reason": state["end_reason"],
-    }, indent=4)
+    new_episode = {
+        "messages": state["messages"],
+        "status": "success" if state["successOccurred"] else "failure" if state["failureOccurred"] else "timed_out",
+        "endReason": state["endReason"] if state["endReason"] != "" else "The game has run out of iterations."
+    }
 
     llm = init_llm(
         provider=configurable.provider,
@@ -301,6 +301,6 @@ def failure_analysis_node(state: AgentState, config: RunnableConfig) -> AgentSta
 
     return {
         "messages": [
-            AIMessage(content=f"{result.content}")
+            {"learnerMessage": result.content}
         ]
     }

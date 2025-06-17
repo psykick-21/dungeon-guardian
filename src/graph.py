@@ -50,31 +50,31 @@ if __name__ == "__main__":
         comfyActions=0
     )
     
-    events = graph.stream({"current_world_state": world_state}, {"recursion_limit": 100})
+    events = graph.stream({"currentWorldState": world_state}, {"recursion_limit": 100})
 
     for event in events:
         if "goal_generator" in event:
             print("<<< GOAL GENERATOR >>>")
-            print(f"Primary goal: {event['goal_generator']['goals']['primaryGoal']}")
-            print(f"Secondary goal: {event['goal_generator']['goals']['secondaryGoal']}")
-            print(f"Justification: {event['goal_generator']['goal_justification']}")
+            print(f"Primary goal: {event['goal_generator']['primaryGoal']}")
+            print(f"Secondary goal: {event['goal_generator']['secondaryGoal']}")
+            print(f"Justification: {event['goal_generator']['goalJustification']}")
             print(f"Action failure suggestions: {event['goal_generator']['actionFailureSuggestions']}")
             print("--------------------------------\n\n")
 
         elif "planner" in event:
 
             print("<<< PLANNER >>>")
-            print(f"Action sequence: {event['planner']['action_sequence']}")
+            print(f"Action sequence: {event['planner']['actionSequence']}")
             print("--------------------------------\n\n")
 
         elif "action_executor" in event:
             print("<<< ACTION EXECUTOR >>>")
-            print(event["action_executor"]["messages"][-1].content)
+            print(event["action_executor"]["messages"][-1]["gameMessage"])
             print("--------------------------------\n\n")
 
         elif "check_success_conditions" in event:
             print("<<< CHECK SUCCESS CONDITIONS >>>")
-            print(event["check_success_conditions"]["messages"][-1].content )
+            print(event["check_success_conditions"]["messages"][-1]["gameMessage"])
             print("--------------------------------\n\n")
 
         elif "logger_node" in event:
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
         elif "failure_analysis_node" in event:
             print("<<< FAILURE ANALYSIS >>>")
-            print(event["failure_analysis_node"]["messages"][-1].content)
+            print(event["failure_analysis_node"]["messages"][-1]["learnerMessage"])
             print("--------------------------------\n\n")
         
         else:
