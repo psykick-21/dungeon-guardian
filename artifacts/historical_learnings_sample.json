@@ -1,12 +1,16 @@
 {
     "actionFailureLearnings": [
-        "Always prioritize retreating to a safe zone when facing a very high level enemy without backup, even if health and stamina are strong.",
-        "When stamina is depleted, focus on resting to restore it before engaging in strenuous activities."
+        "Ensure preconditions are met before attempting an action, such as confirming the presence of potions before searching for them.",
+        "Avoid actions that deplete stamina to 0 unless there are immediate means to recover, as this can lead to exhaustion and failure.",
+        "Strategically use backup to manage resource limitations and avoid exhaustion, especially when immediate threats are not present."
     ],
-    "gameFailureLearnings": [],
+    "gameFailureLearnings": [
+        "Avoid actions that lead to exhaustion by maintaining a minimum stamina threshold to prevent agent failure due to resource depletion."
+    ],
     "generalLearnings": [
-        "Effective resource management, such as using potions strategically, can provide a significant advantage in maintaining readiness for battle.",
-        "Prioritize survival and strategic positioning over immediate confrontation when facing significantly stronger enemies.",
-        "Utilizing safe zones for recovery and regrouping can turn the tide in challenging situations."
+        "Utilize downtime in safe zones to prepare for future threats, focusing on recovery and resource accumulation.",
+        "Calling for backup can serve both as a strategic preparation and a means to reset game conditions such as comfy actions.",
+        "Prioritize retreating to a safe zone when health is moderate and an enemy is nearby to ensure survival and effective preparation for combat.",
+        "Manage stamina carefully to avoid exhaustion, ensuring that actions align with available resources and recovery options."
     ]
 }
