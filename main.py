@@ -5,15 +5,15 @@ import json
 
 # Initialize the world state here
 world_state = WorldState(
-    health=80,
-    stamina=80,
-    potionCount=2,
-    treasureThreatLevel="high",
+    health=30,
+    stamina=25,
+    potionCount=1,
+    treasureThreatLevel="very_high",
     enemyNearby=True,
     enemyLevel="very_high",
     isInSafeZone=False,
-    isBackup=False,
-    treasureHealth=100,
+    isBackup=True,
+    treasureHealth=40,
     comfyActions=0
 )
 
