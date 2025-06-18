@@ -1,0 +1,12 @@
+{
+    "actionFailureLearnings": [
+        "Always prioritize retreating to a safe zone when facing a very high level enemy without backup, even if health and stamina are strong.",
+        "When stamina is depleted, focus on resting to restore it before engaging in strenuous activities."
+    ],
+    "gameFailureLearnings": [],
+    "generalLearnings": [
+        "Effective resource management, such as using potions strategically, can provide a significant advantage in maintaining readiness for battle.",
+        "Prioritize survival and strategic positioning over immediate confrontation when facing significantly stronger enemies.",
+        "Utilizing safe zones for recovery and regrouping can turn the tide in challenging situations."
+    ]
+}
