@@ -57,13 +57,38 @@ python main.py
 
 ### Usage
 
-The agent will begin with a predefined world state and make decisions based on the current situation. You'll see real-time output showing:
+#### Single Scenario Mode
+
+Run the main script to start a dungeon guardian session with a single scenario:
+
+```bash
+python main.py
+```
+
+This will run an interactive session where you can see real-time output showing:
 - Current world state
 - Generated goals and justifications
 - Planned action sequences
 - Execution results
 - Success/failure analysis
 - Learning insights
+
+#### Batch Scenario Mode
+
+Run multiple predefined scenarios for testing and comparison:
+
+```bash
+python main_run_batch.py
+```
+
+This script runs 5 different scenarios including:
+- **Scenario 1**: Low health, no healing resources, enemy nearby
+- **Scenario 2**: Healthy agent, treasure under high threat
+- **Scenario 3**: No enemy nearby, low stamina, potions available
+- **Scenario 4**: Out of potions, enemy present, treasure safe
+- **Scenario 5**: Critical situation with multiple threats
+
+Each scenario outputs success/failure status, end reason, and iteration count for performance analysis.
 
 ### Configuration
 
@@ -167,7 +192,8 @@ dungeon-guardian/
 │   ├── game_logs_sample.json # Example game session
 │   └── system-design.jpg     # Architecture diagram
 ├── main.py                   # Entry point
-└── pyproject.toml           # Dependencies
+├── main_run_batch.py         # run a batch of scenerios
+└── pyproject.toml            # Dependencies
 ```
 
 ## 🙏 Acknowledgments
