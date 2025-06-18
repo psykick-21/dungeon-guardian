@@ -2,7 +2,6 @@ from dataclasses import dataclass, fields
 from langchain_core.runnables import RunnableConfig
 import os
 from typing import Any
-import uuid
 
 @dataclass(kw_only=True)
 class Configuration:
@@ -12,8 +11,8 @@ class Configuration:
     temperature: float = 0.5
     log_path: str = "/Users/psykick/Documents/GitHub/dungeon-guardian/temp/game_logs"
     learning_path: str = "/Users/psykick/Documents/GitHub/dungeon-guardian/temp/learning"
-    thread_id: str = str(uuid.uuid4())
     total_iterations: int = 10
+    thread_id: str
     
     @classmethod
     def from_runnable_config(

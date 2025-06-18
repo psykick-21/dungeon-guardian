@@ -127,6 +127,7 @@ def check_failure_conditions(world_state: WorldState) -> tuple[bool, str]:
     
     return False, ""
 
+
 def check_success_conditions(world_state: WorldState) -> tuple[bool, str]:
     """
     Check if the agent has succeeded based on the current world state.

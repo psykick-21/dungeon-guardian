@@ -1,6 +1,6 @@
 from typing import TypedDict, Union, Annotated, List, Dict, Any
 import operator
-from .type import WorldState, Goals
+from ..type import WorldState
 
 
 class AgentState(TypedDict):

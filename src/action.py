@@ -180,3 +180,14 @@ actions_dict = {
         "effects": action.effects
     } for action in action_pool
 }
+
+
+action_failure_probability = {
+    "heal_self": {
+        "probability": 0.2,
+        "reason": "The potion you tried to heal with was broken.",
+        "effects": {
+            "potionCount": lambda x: x["potionCount"] - 1
+        }
+    }
+}

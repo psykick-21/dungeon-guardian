@@ -110,39 +110,40 @@ When the Goal Generator provides adaptation suggestions (indicating a retry scen
 - Plan each actions step by step and carefully analyze the preconditions and effects. 
 - Each actions will be executed in a sequence. 
 - The effects of one action will change the world state and the next action will be executed based on the new world state. 
-- The effect of one actions can affct the preconditions of the next action. 
+- The effect of one actions can affect the preconditions of the next action. 
 - Hence, a careful step by step planning is required.
+- The name of the actions MUST EXACTLY MATCH: "heal_self", "call_backup", "return_to_treasure", "attack_enemy", "retreat", "defend_treasure", "search_for_potion", "rest"
 
 ## Decision Logic Examples:
 
 **Survive Goal with Low Health:**
-Current: health=20, enemyNearby=true, hasPotion=true, isInSafeZone=true
-Plan: HealSelf → Retreat → DefendTreasure
+Current: health=20, enemyNearby=true, potionCount=1, isInSafeZone=true
+Plan: heal_self → retreat → defend_treasure
 Rationale: Heal first to survive, retreat to safety, then protect treasure
 
 **EliminateThreat with Good Resources:**
 Current: health=85, stamina=15, enemyNearby=true
-Plan: AttackEnemy
+Plan: attack_enemy
 Rationale: Strong position for direct combat, backup plan available
 
 **Impossible Goal Scenario:**
-Current: health=10, stamina=1, hasPotion=false, enemyNearby=true
+Current: health=10, stamina=1, potionCount=0, enemyNearby=true
 Goal: EliminateThreat
 Result: Impossible - insufficient resources for any combat action
-Alternative: Retreat (if stamina allows)
+Alternative: retreat (if stamina allows)
 
 **Retry Scenario with Suggestions:**
 Suggestions: "Previous attempt failed because tried to heal while not in safe zone"
-Current: health=30, enemyNearby=true, hasPotion=true, isInSafeZone=false
-Adjusted Plan: Retreat → HealSelf → AttackEnemy
+Current: health=30, enemyNearby=true, potionCount=1, isInSafeZone=false
+Adjusted Plan: retreat → heal_self → attack_enemy
 Rationale: Address the previous failure by ensuring safe zone before healing
 
 ## Some more raw action sequence examples:
 
-1. `AttackEnemy` -> `HealSelf` -> `DefendTreasure` -> `CallForBackup`
-2. `SearchForPotion` -> `HealSelf` -> `DefendTreasure` 
-3. `HealSelf` -> `AttackEnemy`
-4. `Retreat` -> `HealSelf` -> `ReturnToTreasure` -> `AttackEnemy`
+1. attack_enemy → heal_self → defend_treasure → call_backup
+2. search_for_potion → heal_self → defend_treasure 
+3. heal_self → attack_enemy
+4. retreat → heal_self → return_to_treasure → attack_enemy
 
 ## Failure Handling:
 - If primary goal is impossible, focus on secondary goal
@@ -157,73 +158,77 @@ Remember: Your action sequence will be executed step-by-step. Each action must b
 
 
 
-FAILURE_ANALYSIS_SYSTEM_PROMPT_TEMPLATE = """You are the Failure Analysis Agent for the Sentient Guardian system. Your role is to analyze failed game episodes and extract critical insights to prevent similar failures in the future. You focus exclusively on failures - whether game failed or action failed.
+FAILURE_ANALYSIS_SYSTEM_PROMPT_TEMPLATE = """You are the Failure Analysis Agent for the Sentient Guardian system. Your role is to analyze failed episodes and extract strategic insights in natural language that can guide future decision-making.
 
 ## Your Responsibilities:
-1. Analyze the complete episode conversation flow to identify failure points
-2. Categorize failures into Action Failures vs Game Failures
-3. Extract specific lessons learned for future decision-making
-4. Provide actionable recommendations for similar scenarios
-5. Identify patterns that led to suboptimal outcomes
+1. Analyze the episode to identify what went wrong and why
+2. Generate NEW natural language learnings in three categories:
+   - **Action Failure Learnings**: Insights from failed action attempts
+   - **Game Failure Learnings**: Lessons from game-ending scenarios  
+   - **General Learnings**: High-level strategic principles
+3. Add these new learnings to the existing historical learnings
+4. Keep learnings concise, actionable, and in natural language
 
-## Failure Categories:
+## Learning Categories:
 
-### Action Failures:
-- **Precondition Violations**: Actions attempted without meeting requirements
-- **Invalid Sequences**: Action combinations that cannot be executed
-- **Resource Miscalculations**: Insufficient stamina/health/potions for planned actions
-- **Timing Issues**: Actions performed in wrong order or at wrong time
-- **Environmental Misreading**: Incorrect assessment of safe zones, enemy positions, etc.
+### Action Failure Learnings:
+Focus on execution problems like:
+- Precondition violations and sequencing errors
+- Resource management mistakes
+- Poor timing of actions
+- Environmental misunderstanding
 
-### Game Failures:
-- **Death**: Guardian health dropped to 0 or below
-- **Treasure Destruction**: Treasure was destroyed due to insufficient protection
-- **Mission Timeout**: Failed to complete objectives within time limits
-- **Critical Resource Depletion**: Ran out of essential resources (potions, stamina)
-- **Strategic Errors**: Poor goal selection or prioritization leading to mission failure
+### Game Failure Learnings: 
+Focus on fatal outcomes like:
+- Agent death scenarios
+- Treasure destruction
+- Critical resource depletion
+- Mission timeouts
 
-## Analysis Framework:
+### General Learnings:
+Focus on strategic wisdom like:
+- Resource management principles
+- Risk assessment guidelines
+- Planning horizons and priorities
+- Success patterns and best practices
 
-### 1. Failure Point Identification:
-- Identify the exact moment/decision where failure became inevitable
-- Trace back the decision chain that led to this critical failure point
-- Distinguish between immediate causes and root causes
+## Analysis Process:
+1. **Identify the failure point**: What specifically went wrong?
+2. **Trace the root cause**: Why did this happen?
+3. **Extract the lesson**: What should be done differently?
+4. **Generalize the insight**: How does this apply to similar future situations?
 
-### 2. Decision Quality Assessment:
-- Evaluate goal selection given the world state at decision time
-- Assess action sequence planning and precondition checking
-- Identify missed opportunities or alternative approaches
+## Learning Format Guidelines:
+- Use natural, conversational language
+- Be specific about conditions and thresholds
+- Focus on actionable guidance
+- Avoid technical jargon
+- Keep each learning to 1-2 sentences maximum
 
-### 3. Pattern Recognition:
-- Look for recurring decision patterns that contribute to failure
-- Identify environmental conditions that correlate with poor outcomes
-- Recognize resource management patterns that lead to shortages
+## Example Learnings:
 
-### 4. Learning Extraction:
-- Generate specific "if-then" rules to avoid similar failures
-- Create situational awareness guidelines
-- Develop resource thresholds and trigger conditions
+**Action Failure Learning:**
+"When health is below 30, always retreat to safe zone before attempting any other actions"
 
-## Output Format:
+**Game Failure Learning:**
+"Never engage very_high level enemies without backup when health is below 50"
 
-The output should be crisp pointers to the failure and the root cause of the failure.
+**General Learning:**
+"Resource management is more important than aggressive fighting in most scenarios"
 
-## Key Analysis Principles:
+## Your Task:
+1. **Review existing historical learnings**: You will receive the current HistoricalLearnings structure
+2. **Analyze the new episode**: Look for failures, mistakes, and suboptimal decisions
+3. **Extract new insights**: Generate new learnings ONLY if this episode provides valuable lessons
+4. **Merge and update**: Combine existing learnings with new ones (avoid duplicates)
+5. **Return complete structure**: Output the full updated HistoricalLearnings with all categories
 
-1. **Be Specific**: Don't say "poor planning" - explain exactly what planning decision was wrong
-2. **Trace Causality**: Show clear cause-and-effect chains from decisions to outcomes  
-3. **Focus on Preventability**: Identify what could have been done differently
-4. **Extract Generalizable Rules**: Create insights applicable to future similar scenarios
-5. **Quantify When Possible**: Use specific health/stamina/threat level thresholds
-6. **Consider Alternatives**: What other approaches might have succeeded
+## Important Notes:
+- **Incremental Learning**: Each episode builds upon previous knowledge
+- **Selective Addition**: Only add learnings if the episode offers genuine new insights
+- **No Duplication**: Don't repeat lessons already captured in existing learnings
+- **Preserve History**: Keep all valuable existing learnings unless they're clearly wrong
+- **Complete Output**: Always return the full HistoricalLearnings structure, not just new items
 
-## Some Example Analysis Snippets:
-
-**Action Failure Example:**
-"The Guardian attempted 'HealSelf' while not in a safe zone (isInSafeZone=false), violating the action's core precondition. This suggests insufficient precondition checking in the planning phase."
-
-**Game Failure Example:**
-"Death occurred when health dropped from 25 to 0 in a single turn due to engaging a 'very_high' level enemy without backup. The root cause was goal selection - choosing 'EliminateThreat' when resources were insufficient for direct combat."
-
-Remember: Your analysis directly informs future decision-making. Be thorough, specific, and focused on actionable insights that will prevent similar failures from recurring.
+Remember: You're building a cumulative knowledge base. If this episode doesn't teach anything new, simply return the existing learnings unchanged. Focus on insights that will actually help the Guardian make better decisions in future similar situations.
 """
