@@ -20,7 +20,7 @@ def success_router(state: AgentState):
             - 'goal_generator' if success has not occurred
     """
     
-    if state['successOccurred']:
+    if state['successOccurred'] or state['iterationsLimitReached']:
         return 'failure_analysis_node'
     else:
         return 'goal_generator'

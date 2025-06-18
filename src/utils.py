@@ -101,29 +101,14 @@ def check_failure_conditions(world_state: WorldState) -> tuple[bool, str]:
             - failure_reason: Description of why the agent failed, empty string if not failed
     """
     
-    # Check for agent death
     if world_state.get('health', 100) <= 0:
         return True, "Agent died - health reached 0"
     
-    # Check for treasure destruction
     if world_state.get('treasureHealth', 100) <= 0:
         return True, "Treasure was destroyed - treasureHealth reached 0"
     
-    # Check for critical exhaustion (no stamina and low health in danger)
-    if (world_state.get('stamina', 100) <= 0 and 
-        world_state.get('health', 100) <= 15 and 
-        world_state.get('enemyNearby', False) == True and
-        world_state.get('isInSafeZone', True) == False):
-        return True, "Agent is exhausted and trapped - no stamina, low health, enemy nearby, not in safe zone"
-    
-    # Check for impossible situation (enemy too strong, no resources)
-    if (world_state.get('enemyNearby', False) == True and
-        world_state.get('enemyLevel') == 'very_high' and
-        world_state.get('health', 100) <= 30 and
-        world_state.get('stamina', 100) <= 10 and
-        world_state.get('potionCount', 0) == 0 and
-        world_state.get('isBackup', False) == False):
-        return True, "Impossible situation - very high enemy, low health/stamina, no potions, no backup"
+    if world_state.get('stamina', 100) <= 0:
+        return True, "Agent is exhausted - stamina reached 0"
     
     return False, ""
 

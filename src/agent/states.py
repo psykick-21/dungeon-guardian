@@ -19,4 +19,5 @@ class AgentState(TypedDict):
     endReason: str
     actionFailed: bool
     iterations: int
+    iterationsLimitReached: bool
     

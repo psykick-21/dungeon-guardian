@@ -242,7 +242,6 @@ def action_executor_node(state: AgentState, config: RunnableConfig) -> AgentStat
                 failure_occurred = True
                 failure_reason = reason
                 game_message += f"You have failed due to the following reason: {reason}.\nPlease try again."
-                game_message += f"Executed actions: {executed_actions}"
 
                 return {
                     "messages": [
@@ -298,6 +297,7 @@ def check_success_conditions_node(state: AgentState, config: RunnableConfig) -> 
 
     configurable = Configuration.from_runnable_config(config)
     iterations = state.get("iterations", 0) + 1
+    iterations_limit_reached = False
     
     game_message = ""
     is_successful, success_msg = check_success_conditions(state['currentWorldState'])
@@ -310,18 +310,23 @@ def check_success_conditions_node(state: AgentState, config: RunnableConfig) -> 
                 {"gameMessage": game_message}
             ],
             "successOccurred": is_successful,
-            "endReason": success_msg
+            "endReason": success_msg,
+            "iterations": iterations,
+            "iterationsLimitReached": iterations_limit_reached
         }
     
     else:
     
         if iterations >= configurable.total_iterations:
+            iterations_limit_reached = True
             return {
                 "messages": [
                     {"gameMessage": "You have run out of maximum permissible iterations. The game has ended without success or failure."}
                 ],
                 "successOccurred": is_successful,
-                "endReason": "The game has run out of iterations."
+                "endReason": "The game has run out of iterations.",
+                "iterations": iterations,
+                "iterationsLimitReached": iterations_limit_reached
             }
         
         game_message += f"The game is still running. Please continue.\n"
@@ -330,7 +335,9 @@ def check_success_conditions_node(state: AgentState, config: RunnableConfig) -> 
                 {"gameMessage": game_message}
             ],
             "successOccurred": is_successful,
-            "endReason": success_msg
+            "endReason": success_msg,
+            "iterations": iterations,
+            "iterationsLimitReached": iterations_limit_reached
         }
     
 
